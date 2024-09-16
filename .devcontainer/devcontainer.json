@@ -1,0 +1,33 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/miniconda
+{
+	"name": "pypr-base",
+	"image": "ghcr.io/pypr-24/pypr-base:main",
+
+
+	// VSCode default settings
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "/usr/bin/micromamba shell init --shell bash --root-prefix=/opt/conda",
+
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-toolsai.jupyter"
+			],
+			"settings": {
+				"python.terminal.executeInFileDir": true,
+				"git.rebaseWhenSync": true
+			}
+		}
+	}
+
+}
