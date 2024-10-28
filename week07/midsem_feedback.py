@@ -1,5 +1,16 @@
 import numpy as np
 import pandas as pd
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Code adapted from wordcloud package examples.
+# https://github.com/amueller/word_cloud/tree/main
+# Accessed 28/10/2024.
+
+# More examples with analysing (messy) text data
+# More practice of dealing with reading/writing files
+# Use dictionaries/tuples
+# Learn how to use a new library!
 
 def save_as_tab_separated(filename, output_suffix='_tabs'):
     '''
@@ -91,8 +102,41 @@ def scramble_words(filename, output_suffix='_scrambled'):
         f.write(new_text)
 
 
+def make_word_cloud(filename):
+    '''
+    Create a word cloud from filename.
+    '''
+    # Read the whole text.
+    with open(filename, 'r') as f:
+        text = f.read()
+    
+    # Split answers by student
+    all_students = text.rstrip('\n\t').split('\n')
+    # print(all_students)
+
+    # Build the string for the answers to the first question
+    lecture_positives = ''
+
+    # Split by question for each student
+    for student in all_students:
+        by_question = student.rstrip('\t').split('\t')
+        # assert len(by_question) == 6, by_question
+
+        # Append answer to first question to main string
+        lecture_positives += by_question[1]
+
+    # Generate a word cloud image
+    wordcloud = WordCloud().generate(lecture_positives)
+
+    # Display the generated image:
+    # the matplotlib way:
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show()
+
 
 if __name__ == "__main__":
     pass
     # save_as_tab_separated('Mid-semester feedback.csv')
     # scramble_words('Mid-semester feedback_tabs.csv')
+    make_word_cloud('week07/Mid-semester feedback_tabs_scrambled.csv')
