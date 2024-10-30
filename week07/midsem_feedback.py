@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+import string
 
 # Code adapted from wordcloud package examples.
 # https://github.com/amueller/word_cloud/tree/main
@@ -11,6 +12,10 @@ import matplotlib.pyplot as plt
 # More practice of dealing with reading/writing files
 # Use dictionaries/tuples
 # Learn how to use a new library!
+
+# Some examples are provided at the bottom of the script to
+# better understand new commands I've used in the solution. Try them!
+
 
 def save_as_tab_separated(filename, output_suffix='_tabs'):
     '''
@@ -114,29 +119,90 @@ def make_word_cloud(filename):
     all_students = text.rstrip('\n\t').split('\n')
     # print(all_students)
 
-    # Build the string for the answers to the first question
-    lecture_positives = ''
+    # Build a dictionary to store answers to the 6 questions
+    answers = {'Lecture positives': '',
+               'Lecture improvements': '',
+               'Materials positives': '',
+               'Materials improvements': '',
+               'Workshop positives': '',
+               'Workshop improvements': ''}
+    
+    # Set up another dict (with same keys) for words to exclude for each question
+    exclude = {'Lecture positives': ['lecture', 'lectures'],
+               'Lecture improvements': ['lecture', 'lectures'],
+               'Materials positives': ['material', 'materials'],
+               'Materials improvements': ['material', 'materials'],
+               'Workshop positives': ['workshop', 'workshops'],
+               'Workshop improvements': ['workshop', 'workshops']}
 
     # Split by question for each student
     for student in all_students:
         by_question = student.rstrip('\t').split('\t')
         # assert len(by_question) == 6, by_question
 
-        # Append answer to first question to main string
-        lecture_positives += by_question[1]
+        # Loop over all 6 questions
+        for i, q in enumerate(answers.keys()):
+            # Append lowercased answer to current question to main string
+            answers[q] += by_question[i].lower()
+    
+    # Now we have a big string containing all student answers for each question.
 
-    # Generate a word cloud image
-    wordcloud = WordCloud().generate(lecture_positives)
+    # Create a figure to display the word clouds
+    fig, ax = plt.subplots(2, 3, figsize=(15, 8))
 
-    # Display the generated image:
-    # the matplotlib way:
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
+    # Prepare some indices to plot each question in the appropriate axes
+    # (there are better ways to do this -- see iterators later in the course!)
+    plot_idx = [[i, j] for j in [0, 1, 2] for i in [0, 1]]
+    # print(plot_idx)
+
+    for i, q in enumerate(answers.keys()):
+        # Change all punctuation to spaces
+        acceptable_chars = string.ascii_lowercase + ' '
+        answers[q] = ''.join([char if char in acceptable_chars else ' ' for char in answers[q]])
+
+        # Split each string into words, exclude specific words, rebuild big string
+        # by joining words with a space
+        answers[q] = ' '.join([word for word in answers[q].split() if word not in exclude[q]])
+
+        # Generate a word cloud image for the current question
+        wordcloud = WordCloud(width=600, height=400).generate(answers[q])
+
+        # Plot it in the current axes
+        ax[*plot_idx[i]].imshow(wordcloud, interpolation='bilinear')
+        ax[*plot_idx[i]].set(title=q)
+        ax[*plot_idx[i]].set_axis_off()
+
+    margin = 0.05
+    plt.subplots_adjust(top=1-margin, bottom=margin, left=margin, right=1-margin, wspace=margin, hspace=margin)
     plt.show()
 
 
 if __name__ == "__main__":
-    pass
+    # pass
     # save_as_tab_separated('Mid-semester feedback.csv')
     # scramble_words('Mid-semester feedback_tabs.csv')
     make_word_cloud('week07/Mid-semester feedback_tabs_scrambled.csv')
+
+
+    # # try this to understand how .join() works to join a list of strings:
+    # print('SEPARATOR'.join(['a', 'b', 'c', 'd']))
+
+    # # try this to understand how the * "unpacks" a list into its elements:
+    # my_list = [1, 2, 3]
+    # print(my_list)
+    # print(*my_list)
+
+    # # another example:
+    # t = np.arange(1, 10).reshape((3, 3))
+    # print(t)
+    # index = [1, 2]
+
+    # # this won't work, because it will print t[[1, 2]], which provides
+    # # 2 different row indices (1 and 2) but no column indices; therefore
+    # # the entire rows 1 and 2 are returned
+    # # https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
+    # print(t[index])
+
+    # # solution: to get the element on row 1, column 2, we unpack the index
+    # # list using *
+    # print(t[*index])
