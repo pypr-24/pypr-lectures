@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 30})
+plt.rcParams.update({'font.size': 15})
 
 def first_fit(item_list, bin_size, method=None):
     '''
@@ -57,55 +57,99 @@ def first_fit(item_list, bin_size, method=None):
             # Shorter:
             # bin_state.append(item)
     
-    print('Hi!')
     return bin_state
 
 
-# # Testing
-
-# # size of each item
-# item_list = [2, 1, 3, 2, 1, 2, 3, 1]
-
-# # size of bin
-# bin_size = 4
-
-# # "assert X" does nothing if X is True,
-# # but raises an error if X is False
-# print(first_fit(item_list, bin_size, method='increasing'))
-# # assert first_fit(item_list, bin_size) == [4, 4, 4, 3]
+def generate_random_items(N_sets=1000, N_items=50, min_size=2, max_size=25):
+    '''
+    Generate N_sets sets of N_items items, with random sizes
+    between min_size and max_size (inclusive).
+    Returns a Numpy array with shape (N_sets, N_items).
+    '''
+    items = np.random.randint(min_size, max_size+1, size=(N_sets, N_items))
+    return items
 
 
-# Evaluating the different methods
+def calculate_efficiency(bins, bin_size, metric='pc_filled'):
+    '''
+    Calculate 2 measures for efficiency of the bin-packing method:
+    - the number of bins used,
+    - the % of filled spaced across all bins.
+    '''
+    nb_bins_used = len(bins)
 
-# Set up some simulation parameters
-N_sets = 1000
-N_items = 50
-min_size = 2
-max_size = 25
-bin_size = 60
-
-# Make the items
-items = np.random.randint(min_size, max_size+1, size=(N_sets, N_items))
-# print(items)
-
-# Creating an array to store efficiency data
-efficiency = np.zeros((N_sets, 3))
-
-methods = [None, 'increasing', 'decreasing']
-
-for i in range(N_sets):
-    for j, m in enumerate(methods):
-        # print(j, m)
-        bins = first_fit(items[i], bin_size, method=m)
-
-        # Store efficiency number in some array
-        efficiency[i, j] = 100 * (sum(bins) / (len(bins) * bin_size))
+    if metric == 'pc_filled':
+        return 100 * (sum(bins) / (nb_bins_used * bin_size))
+    elif metric == 'bins_used':
+        return nb_bins_used
+    else:
+        raise ValueError("Choose 'pc_filled' or 'bins_used' for the efficiency metric.")
 
 
-# Visualise the results in some way
-# (distribution plot, calculating average efficiency...)
-fig, ax = plt.subplots()
-# ax.hist(efficiency, bins=20, label=methods)
-ax.boxplot(efficiency)
-ax.legend()
-plt.show()
+def evaluate_method(items, method=None, bin_size=60, metric='pc_filled'):
+    '''
+    Evaluate the efficiency of a particular implementation of
+    the first-fit algorithm for the bin-packing problem.
+
+    Runs the first-fit algorithm with a particular 'method',
+    to pack each row of 'items' into bins of size 'bin_size'.
+
+    Returns a Numpy vector of length N_sets, containing the
+    % of filled space overall for each item set.
+    '''
+    # Creating a vector to store efficiency data
+    N_sets = items.shape[0]
+    eff = np.zeros(N_sets)
+
+    # Loop over the sets of items
+    for i in range(N_sets):
+        # Pack the current set with the designed method
+        bins = first_fit(items[i], bin_size, method=method)
+
+        # Store efficiency metric
+        eff[i] = calculate_efficiency(bins, bin_size, metric=metric)
+    
+    # Return the efficiency metric for all sets of items
+    return eff
+
+
+def compare_methods(methods=[None, 'increasing', 'decreasing'], N_sets=1000, N_items=50, min_size=2, max_size=25, bin_size=60):
+    '''
+    Compares different methods for bin-packing,
+    by performing N_sets simulations with N_items
+    random items each.
+    '''
+    # Create the random items
+    items = generate_random_items(N_sets, N_items, min_size, max_size)
+
+    # Get efficiency metrics for each method and set of items
+    eff_bins_used = np.zeros((len(methods), N_sets))
+    eff_pc_filled = np.zeros((len(methods), N_sets))
+    for i, m in enumerate(methods):
+        eff_bins_used[i] = evaluate_method(items, method=m, bin_size=bin_size, metric='bins_used')
+        eff_pc_filled[i] = evaluate_method(items, method=m, bin_size=bin_size, metric='pc_filled')
+    
+    # Plot the results.
+    # (transpose because otherwise boxplot will attempt to
+    # draw N_sets different box plots)
+    fig, ax = plt.subplots(2, 2, figsize=(12, 10))
+    ax[0, 0].boxplot(eff_bins_used.T, labels=[str(m) for m in methods])
+    ax[0, 1].boxplot(eff_pc_filled.T, labels=[str(m) for m in methods])
+
+    # Plot the histograms one by one (and with transparency)
+    # so they can overlap and we can label them properly
+    for i in range(len(methods)):
+        ax[1, 0].hist(eff_bins_used[i], alpha=0.5, label=f'{methods[i]}')
+        ax[1, 1].hist(eff_pc_filled[i], alpha=0.5, label=f'{methods[i]}')
+
+    # Labelling plots and axes
+    ax[0, 0].set(title='Number of boxes used')
+    ax[0, 1].set(title='% filled space')
+
+    ax[0, 0].set(ylabel='Boxes used')
+    ax[1, 0].set(xlabel='Boxes used', ylabel='Number of item sets')
+    ax[1, 1].set(xlabel='% filled space')
+
+    ax[1, 0].legend()
+    ax[1, 1].legend()
+    plt.show()
