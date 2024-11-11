@@ -1,17 +1,19 @@
 import pandas as pd
+import os
 
-def read_data():
+def read_data(filename):
     '''
     Download and/or read data file.
     '''
 
-    if file_exists_in_my_folder:
-        cat_info = pd.read_csv('cats_uk_reference.csv')
+    if os.path.exists(filename):
+        cat_info = pd.read_csv(filename)
     else:
         print('Downloading the file...')
-        cat_info = pd.read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-31/cats_uk_reference.csv')
+        url = f'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-31/{filename}'
+        cat_info = pd.read_csv(url)
 
         # Save the file
-        cat_info.to_csv('cats_uk_reference.csv')
+        cat_info.to_csv(filename)
     
     return cat_info
